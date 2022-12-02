@@ -1,3 +1,5 @@
+import aok/main
+import aok/sort
 import std/os/env
 import std/os/file
 import std/os/path
@@ -10,24 +12,6 @@ fun separated(p : parser<e, a>, s : parser<e, b>) : <parse|e> list<a>
     s()
     p()
   ))
-
-fun merge(lhs : list<int>, rhs : list<int>) : div list<int>
-  match (lhs, rhs)
-    (l, Nil) -> l
-    (Nil, r) -> r
-    (Cons(l, ls), Cons(r, rs)) -> if l <= r then Cons(l, merge(ls, rhs)) else Cons(r, merge(lhs, rs))
-
-fun sort-internal(l : list<int>) : div list<int>
-  match l
-    Nil -> Nil
-    Cons(x, Nil) -> [x]
-    _ ->
-      val (a, b) = l.split(l.length / 2)
-      merge(sort-internal(a), sort-internal(b))
-
-// Merge-sorts a list.
-fun sort(l : list<int>) : list<int>
-  unsafe-no-div(fn() sort-internal(l))
 
 // Parser for a single elf's food.
 fun elf() : parse list<int>
@@ -56,23 +40,18 @@ fun most-calories(es : list<list<int>>) : int
 fun top-three(es : list<list<int>>) : int
   es.map(sum).sort.reverse.take(3).sum
 
-// Aborts computation with an error message.
-effect exit
-  ctl exit(msg : string) : a
-
-fun main()
-  with ctl exit(msg)
-    println(msg)
-  with ctl throw-exn(x)
-    exit(x.show)
+fun exmain()
   match get-args()
     Cons(filename, _) ->
-      val text = read-text-file(path(filename))
+      val text = read-text-file(filename.path)
       val es = match parse-eof(text.slice, elves)
         ParseOk(es, _) -> es
-        ParseError(msg, _) -> exit("Error parsing input: " ++ msg)
+        ParseError(msg, _) -> abort("Error parsing input: " ++ msg)
       val part1 = most-calories(es)
       val part2 = top-three(es)
       println(part1)
       println(part2)
-    _ -> exit("Input file must be provided")
+    _ -> abort("Input file must be provided")
+
+fun main()
+  run-main(exmain)
