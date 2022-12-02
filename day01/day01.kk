@@ -40,18 +40,14 @@ fun most-calories(es : list<list<int>>) : int
 fun top-three(es : list<list<int>>) : int
   es.map(sum).sort.reverse.take(3).sum
 
-fun exmain()
-  match get-args()
-    Cons(filename, _) ->
-      val text = read-text-file(filename.path)
-      val es = match parse-eof(text.slice, elves)
-        ParseOk(es, _) -> es
-        ParseError(msg, _) -> abort("Error parsing input: " ++ msg)
-      val part1 = most-calories(es)
-      val part2 = top-three(es)
-      println(part1)
-      println(part2)
-    _ -> abort("Input file must be provided")
+fun exmain(input : string)
+  val es = match parse-eof(input.slice, elves)
+    ParseOk(es, _) -> es
+    ParseError(msg, _) -> abort("Error parsing input: " ++ msg)
+  val part1 = most-calories(es)
+  val part2 = top-three(es)
+  println(part1)
+  println(part2)
 
 fun main()
   run-main(exmain)

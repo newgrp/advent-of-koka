@@ -111,17 +111,13 @@ fun calculate-score(guide : list<(move, move)>) : int
 fun calculate-score(guide : list<(move, outcome)>) : int
   guide.map(fn((them, o)) response(them, o).value + o.score).sum
 
-fun exmain()
-  match get-args()
-    Cons(filename, _) ->
-      val text = read-text-file(filename.path)
-      val guide1 = parse-guide1(text)
-      val guide2 = parse-guide2(text)
-      val pt1-score = calculate-score(guide1)
-      val pt2-score = calculate-score(guide2)
-      println(pt1-score)
-      println(pt2-score)
-    _ -> abort("Input file must be provided")
+fun exmain(input : string)
+  val guide1 = parse-guide1(input)
+  val guide2 = parse-guide2(input)
+  val pt1-score = calculate-score(guide1)
+  val pt2-score = calculate-score(guide2)
+  println(pt1-score)
+  println(pt2-score)
 
 fun main()
   run-main(exmain)
