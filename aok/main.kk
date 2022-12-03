@@ -10,7 +10,7 @@ pub effect abort
 // them.
 fun ctx(msg : string, action : () -> <abort,abort|e> a) : <abort|e> a
   with ctl abort(m)
-    abort(msg ++ m)
+    abort(msg ++ ": " ++ m)
   action()
 
 // Extracts the value from a `maybe` or aborts.
