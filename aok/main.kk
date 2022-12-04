@@ -1,6 +1,7 @@
 import std/os/env
 import std/os/file
 import std/os/path
+import std/text/parse
 
 // Aborts computation with an error message.
 pub effect abort
@@ -18,6 +19,13 @@ pub fun expect(m : maybe<a>, msg : string) : abort a
   match m
     Just(x) -> x
     Nothing -> abort(msg)
+
+// Extracts the value from a `parse-error` or aborts.
+pub fun expect(e : parse-error<a>, msg : string) : abort a
+  with ctx(msg)
+  match e
+    ParseOk(result, _) -> result
+    ParseError(m, rest) -> abort(m ++ " [remaining string \"" ++ rest.string ++ "\"]")
 
 // Runs `main`, handling any exceptions and exit calls.
 pub fun run-main(main : (string) -> <abort,console,exn> ()) : <console,fsys,ndet> ()
