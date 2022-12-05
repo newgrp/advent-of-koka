@@ -18,7 +18,11 @@ struct move
   dst : int
 
 // Applies a move to a list of stacks.
-fun apply(stacks : list<list<char>>, move : move) : <abort,exn> list<list<char>>
+fun apply(
+  stacks : list<list<char>>,
+  move : move,
+  mover : list<char> -> list<char>
+) : <abort,exn> list<list<char>>
   with ctx("In stack\n" ++ stacks.show ++ "\n")
   val Move(count, src, dst) = move
   if src == dst then abort(
@@ -33,7 +37,7 @@ fun apply(stacks : list<list<char>>, move : move) : <abort,exn> list<list<char>>
     count.show
   )
   val (s, targets) = stackvec[src].split(stackvec[src].length - count)
-  val d = stackvec[dst] ++ targets.reverse
+  val d = stackvec[dst] ++ mover(targets)
   stackvec[src] := s
   stackvec[dst] := d
   stackvec.list
@@ -118,11 +122,12 @@ fun pinput() : <abort,parse> (list<list<char>>, list<move>)
 // Calculates the top crate on each stack after all moves.
 fun calculate-tops(
   stacks : list<list<char>>,
-  moves : list<move>
+  moves : list<move>,
+  mover : list<char> -> list<char>
 ) : <abort,exn> list<char>
   moves.foldl((0, stacks), fn((i : int, stacks : list<list<char>>), move)
     with ctx("On move " ++ i.show)
-    (i + 1, stacks.apply(move))
+    (i + 1, stacks.apply(move, mover))
   ).snd.map-indexed(fn(i, st)
     with ctx("In stack " ++ i.show)
     st.last.expect("Empty stack at end")
@@ -133,8 +138,10 @@ fun exmain(input : string)
     input.slice,
     pinput
   ).expect("Failed to parse input text")
-  val tops = calculate-tops(stacks, moves).string
-  println(tops)
+  val tops9000 = calculate-tops(stacks, moves, reverse).string
+  val tops9001 = calculate-tops(stacks, moves, id).string
+  println(tops9000)
+  println(tops9001)
 
 fun main()
   run-main(exmain)
