@@ -1,17 +1,10 @@
 import aok/main
+import aok/parse
 import aok/sort
 import std/os/env
 import std/os/file
 import std/os/path
 import std/text/parse
-
-// Returns a parser for a list of `p` separated by `s`. The `s` parse results
-// are dropped. Requires at least one successful `p` parse.
-fun separated(p : parser<e, a>, s : parser<e, b>) : <parse|e> list<a>
-  Cons(p(), many(fn()
-    s()
-    p()
-  ))
 
 // Parser for a single elf's food.
 fun elf() : parse list<int>
