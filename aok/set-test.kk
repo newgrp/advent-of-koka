@@ -1,4 +1,4 @@
-import aok/redblack
+import aok/set
 import aok/testing
 import std/num/int32
 import std/num/random
@@ -145,8 +145,9 @@ fun test-random-unions()
   )
 
 
-fun tests-set()
+fun tests-all()
   with subctx("Set tests")
+  with strong-random
   test-newset-is-empty()
   test-insert-adds-elements()
   test-insert-is-idempotent()
@@ -154,10 +155,6 @@ fun tests-set()
   test-random-inserts()
   test-union-contains-all-elements-once()
   test-random-unions()
-
-fun tests-all()
-  with strong-random
-  tests-set()
 
 fun main()
   testmain(tests-all)

@@ -1,12 +1,3 @@
-import std/num/float64
-import std/num/int32
-import std/num/int64
-
-fun lmap(e : either<a, b>, f : a -> e c) : e either<c, b>
-  match e
-    Left(a) -> Left(f(a))
-    Right(b) -> Right(b)
-
 type color
   con Black
   con Red
@@ -58,17 +49,17 @@ fun size-internal(tree : rbtree<a>) : div int
 fun size(tree : rbtree<a>) : int
   unsafe-no-div(fn() tree.size-internal)
 
-fun find-internal(tree : rbtree<a>, key : a, cmp : (a, a) -> order) : div maybe<a>
+fun find-internal(tree : rbtree<a>, hint : a -> order) : div maybe<a>
   match tree
     Leaf -> Nothing
-    Node(_, value, left, right) -> match cmp(key, value)
-      Lt -> left.find-internal(key, cmp)
+    Node(_, value, left, right) -> match hint(value)
+      Lt -> left.find-internal(hint)
       Eq -> Just(value)
-      Gt -> right.find-internal(key, cmp)
+      Gt -> right.find-internal(hint)
 
 // Searches a red-black tree for a node.
-fun find(tree : rbtree<a>, key : a, cmp : (a, a) -> order) : maybe<a>
-  unsafe-no-div(fn() tree.find-internal(key, cmp))
+fun find(tree : rbtree<a>, hint : a -> order) : maybe<a>
+  unsafe-no-div(fn() tree.find-internal(hint))
 
 // Balances a black node of red-black that may have red child and red grandchild
 // of that child. The red grandchild may also have a red child.
@@ -95,28 +86,34 @@ fun balance(tree : rbtree<a>) : rbtree<a>
 fun insert-internal(
   tree : rbtree<a>,
   key : a,
-  cmp : (a, a) -> order
-) : div either<rbtree<a>, a>
+  cmp : (a, a) -> order,
+  replace : bool
+) : div (rbtree<a>, maybe<a>)
   match tree
-    Leaf -> Left(Node(Red, key, Leaf, Leaf))
+    Leaf -> (Node(Red, key, Leaf, Leaf), Nothing)
     Node(color, value, left, right) -> match cmp(key, value)
-      Lt -> left.insert-internal(key, cmp).lmap(fn(l)
-        Node(color, value, l, right).balance
+      Lt ->
+        val (l, prev) = left.insert-internal(key, cmp, replace)
+        (Node(color, value, l, right).balance, prev)
+      Eq -> (
+        Node(color, if replace then key else value, left, right),
+        Just(value)
       )
-      Eq -> Right(value)
-      Gt -> right.insert-internal(key, cmp).lmap(fn(r)
-        Node(color, value, left, r).balance
-      )
+      Gt ->
+        val (r, prev) = right.insert-internal(key, cmp, replace)
+        (Node(color, value, left, r).balance, prev)
 
 // Inserts an element into a red-black tree.
 fun insert(
   tree : rbtree<a>,
   key : a,
-  cmp : (a, a) -> order
-) : either<rbtree<a>, a>
-  unsafe-no-div(fn()
-    tree.insert-internal(key, cmp)
-  ).lmap(as-black)
+  cmp : (a, a) -> order,
+  replace : bool
+) : (rbtree<a>, maybe<a>)
+  val (t, prev) = unsafe-no-div(fn()
+    tree.insert-internal(key, cmp, replace)
+  )
+  (t.as-black, prev)
 
 // Unzips a red-black tree along the left spine.
 fun unzip-left(
@@ -285,91 +282,3 @@ fun node-values-internal(tree : rbtree<a>) : div list<a>
 // Returns a list of the node values in a red-black tree.
 fun node-values(tree : rbtree<a>) : list<a>
   unsafe-no-div(fn() tree.node-values-internal)
-
-// A set of values of the same type.
-pub type rbset<a>
-  Set(
-    tree : rbtree<a>,
-    cmp : (a, a) -> order
-  )
-
-// Returns an empty set.
-pub fun newset(cmp : (a, a) -> order) : rbset<a>
-  Set(Leaf, cmp)
-
-pub fun newset-char() : rbset<char>
-  newset(compare : (char, char) -> order)
-
-pub fun newset-float64() : rbset<float64>
-  newset(compare : (float64, float64) -> order)
-
-pub fun newset-int() : rbset<int>
-  newset(compare : (int, int) -> order)
-
-pub fun newset-int32() : rbset<int32>
-  newset(compare : (int32, int32) -> order)
-
-pub fun newset-int64() : rbset<int64>
-  newset(compare : (int64, int64) -> order)
-
-pub fun newset-string() : rbset<string>
-  newset(compare : (string, string) -> order)
-
-// A debug string showing the internals of a set.
-pub fun debug(set : rbset<a>, show : a -> string) : string
-  match set
-    Set(tree, _) -> "Set(" ++ tree.debug(show) ++ ")"
-
-pub fun debug(set : rbset<int32>) : string
-  set.debug(show)
-
-// The size of the set.
-pub fun size(set : rbset<a>) : int
-  match set
-    Set(tree, _) -> tree.size
-
-// A list of the elements of a set in increasing order.
-pub fun list(set : rbset<a>) : list<a>
-  match set
-    Set(tree, _) -> tree.node-values
-
-// Determines whether a set contains an element.
-pub fun contains(set : rbset<a>, value : a) : bool
-  match set
-    Set(tree, cmp) -> tree.find(value, cmp).is-just
-
-// Inserts an element into a set, if it doesn't already exist.
-pub fun insert(set : rbset<a>, value : a) : rbset<a>
-  set.try-insert(value).fst
-
-// Inserts an element into a set. Returns false in the second value if the
-// element already existed.
-pub fun try-insert(set : rbset<a>, value : a) : (rbset<a>, bool)
-  match set
-    Set(tree, cmp) -> match tree.insert(value, cmp)
-      Left(t) -> (Set(t, cmp), True)
-      Right(_) -> (set, False)
-
-// Takes the union of two sets. Uses the comparator from the left set.
-pub fun (||)(lhs : rbset<a>, rhs : rbset<a>) : rbset<a>
-  match (lhs, rhs)
-    (Set(lt, cmp), Set(rt, _)) -> Set(union(lt, rt, cmp, fn(l, r) l), cmp)
-
-// Pretty-prints a set using the given element printer.
-pub fun show(set : rbset<a>, show : a -> string) : string
-  "{" ++ set.list.map(show).join(", ") ++ "}"
-
-pub fun show(set : rbset<char>) : string
-  set.show(show)
-
-pub fun show(set : rbset<int>) : string
-  set.show(show)
-
-pub fun show(set : rbset<int32>) : string
-  set.show(show)
-
-pub fun show(set : rbset<int64>) : string
-  set.show(show)
-
-pub fun show(set : rbset<string>) : string
-  set.show(show)
