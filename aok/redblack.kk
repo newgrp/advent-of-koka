@@ -7,11 +7,6 @@ fun lmap(e : either<a, b>, f : a -> e c) : e either<c, b>
     Left(a) -> Left(f(a))
     Right(b) -> Right(b)
 
-fun emapget(e : either<a, a>, f : a -> e b) : e b
-  match e
-    Left(a) -> f(a)
-    Right(a) -> f(a)
-
 type color
   con Black
   con Red
