@@ -209,20 +209,43 @@ fun fold(fs : fs, f : fs-node<a> -> e a) : e a
       size
     ))
 
-fun exmain(input : string)
-  val cmds = parse(input.slice, pinput).expect("Invalid input")
-  val fs = cmds.foldl(Fs-wip([], "/", Nothing), apply).zip-all.finalize
-
-  val total-up-to-tenk = unsafe-no-div(fn() fs.fold(fn(node)
+// Calculates the sum of the total sizes of all directories with a total size
+// less than or equal to the given value.
+fun total-up-to(fs : fs, threshold : int) : int
+  unsafe-no-div(fn() fs.fold(fn(node)
     match node
       File(_, _) -> 0
-      Dir(_, children, size) -> children.sum + (if size <= 100000
-        then size
-        else 0
+      Dir(_, children, size) -> children.sum + (
+        if size <= threshold
+          then size
+          else 0
       )
   ))
 
-  println(total-up-to-tenk)
+// Returns the size of the smallest directory whose deletion would result in at
+// most the given total filesystem size.
+fun find-deletion-candidate(fs : fs, max-size : int) : maybe<int>
+  val threshold = fs.total-size - max-size
+  unsafe-no-div(fn() fs.fold(fn(node)
+    match node
+      File(_, _) -> Nothing
+      Dir(_, children, size) -> 
+        val candidate = (
+          (if size >= threshold then [size] else []) ++
+          children.concat-maybe
+        ).minimum(-1)
+        if candidate >= 0 then Just(candidate) else Nothing
+  ))
+
+fun exmain(input : string)
+  val cmds = parse(input.slice, pinput).expect("Invalid input")
+  val fs = cmds.foldl(Fs-wip([], "/", Nothing), apply).zip-all.finalize
+  val part1 = fs.total-up-to(100000)
+  val part2 = fs.find-deletion-candidate(40000000).expect(
+    "No candidate directory"
+  )
+  println(part1)
+  println(part2)
 
 fun main()
   run-main(exmain)
