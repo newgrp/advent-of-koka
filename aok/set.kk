@@ -102,3 +102,7 @@ pub fun show(set : rbset<int64>) : string
 
 pub fun show(set : rbset<string>) : string
   set.show(show)
+
+// Takes the union of a list of sets.
+pub fun union(ss : list<rbset<a>>, cmp : (a, a) -> order) : rbset<a>
+  ss.foldl(newset(cmp), (||))
