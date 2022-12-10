@@ -30,9 +30,19 @@ fun find-split-internal(
 pub fun find-split(xs : list<a>, pred : a -> bool) : maybe<(list<a>, a, list<a>)>
   unsafe-no-div(fn() xs.find-split-internal(pred))
 
+// As `foldl`, but accumulates the list of state values at each stage. The
+// returned list includes the initial value.
+pub fun foldl-accumulate(xs : list<a>, init : b, f : (b, a) -> e b) : e list<b>
+  Cons(init, xs.foldl([], fn(acc, a)
+    val b = match acc
+      Nil -> init
+      Cons(b, _) -> b
+    Cons(f(b, a), acc)
+  ).reverse)
+
 // Steps through the original list `n` elements at a time, starting with the
 // first element.
-fun step-by(xs : list<a>, n : int) : list<a>
+pub fun step-by(xs : list<a>, n : int) : list<a>
   match xs
     Nil -> Nil
     Cons(x, xx) -> Cons(x, xx.drop(n - 1).unsafe-decreasing.step-by(n))
