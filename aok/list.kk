@@ -26,7 +26,7 @@ pub fun find-split(
 
 // As `foldl`, but accumulates the list of state values at each stage. The
 // returned list includes the initial value.
-pub fun foldl-accumulate(xs : list<a>, init : b, f : (b, a) -> e b) : e list<b>
+pub fun scanl(xs : list<a>, init : b, f : (b, a) -> e b) : e list<b>
   Cons(init, xs.foldl([], fn(acc, a)
     val b = match acc
       Nil -> init

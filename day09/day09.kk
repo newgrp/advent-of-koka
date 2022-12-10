@@ -100,12 +100,12 @@ fun apply(r : rope, dir : dir) : rope
   match r
     Nil -> Nil
     Cons(head, ts) ->
-      ts.foldl-accumulate(head.step(dir), fn(h, t) chase(t, h))
+      ts.scanl(head.step(dir), fn(h, t) chase(t, h))
 
 // Applies each head step to the rope, returning a list of all rope positions in
 // order.
 fun apply-all(r : rope, dirs : list<dir>) : list<rope>
-  dirs.foldl-accumulate(r, apply)
+  dirs.scanl(r, apply)
 
 // Finds the number of distinct tail positions in a list.
 fun distinct-tail-positions(rs : list<rope>) : <abort,console> int
