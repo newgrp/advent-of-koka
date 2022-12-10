@@ -42,10 +42,18 @@ fun signal-strengths-sum(xs : list<int>, samples : list<int>) : int
     if samples.find(fn(s) s == i).is-just then Just(i * x) else Nothing
   ).sum
 
+// Renders an image using an executed program.
+fun render(xs : list<int>, width : int) : string
+  xs.enumerate.drop(1).map(fn((i, x))
+    if abs(x - (i - 1) % width) <= 1 then '#' else '.'
+  ).chunks(width).map(string).join("\n")
+
 fun exmain(input : string)
   val prog = parse(input.slice, pinput).expect("Invalid input")
   val part1 = prog.run(1).signal-strengths-sum([20, 60, 100, 140, 180, 220])
+  val part2 = prog.run(1).render(40)
   println(part1)
+  println(part2)
 
 fun main()
   run-main(exmain)

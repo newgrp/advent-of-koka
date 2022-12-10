@@ -2,7 +2,7 @@
 
 // Splits a list into chunks of the given size. The last chunk may contain fewer
 // elements if the length of the list is not divisible by `size`.
-pub fun chunks(xs : list<a>, size : int) : div list<list<a>>
+pub fun chunks(xs : list<a>, size : int) : list<list<a>>
   match xs
     Nil -> Nil
     _ -> Cons(xs.take(size), xs.drop(size).unsafe-decreasing.chunks(size))
