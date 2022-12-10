@@ -40,26 +40,21 @@ fun debug(tree : rbtree<a>, show : a -> string) : string
         right.debug(show)
       ].join(", ") ++ ")"
 
-fun size-internal(tree : rbtree<a>) : div int
-  match tree
-    Leaf -> 0
-    Node(_, _, left, right) -> 1 + left.size-internal + right.size-internal
-
 // Returns the number of nodes in a red-black tree.
 fun size(tree : rbtree<a>) : int
-  unsafe-no-div(fn() tree.size-internal)
-
-fun find-internal(tree : rbtree<a>, hint : a -> order) : div maybe<a>
   match tree
-    Leaf -> Nothing
-    Node(_, value, left, right) -> match hint(value)
-      Lt -> left.find-internal(hint)
-      Eq -> Just(value)
-      Gt -> right.find-internal(hint)
+    Leaf -> 0
+    Node(_, _, left, right) ->
+      1 + left.unsafe-decreasing.size + right.unsafe-decreasing.size
 
 // Searches a red-black tree for a node.
 fun find(tree : rbtree<a>, hint : a -> order) : maybe<a>
-  unsafe-no-div(fn() tree.find-internal(hint))
+  match tree
+    Leaf -> Nothing
+    Node(_, value, left, right) -> match hint(value)
+      Lt -> left.unsafe-decreasing.find(hint)
+      Eq -> Just(value)
+      Gt -> right.unsafe-decreasing.find(hint)
 
 // Balances a black node of red-black that may have red child and red grandchild
 // of that child. The red grandchild may also have a red child.
@@ -88,19 +83,21 @@ fun insert-internal(
   key : a,
   cmp : (a, a) -> order,
   replace : bool
-) : div (rbtree<a>, maybe<a>)
+) : (rbtree<a>, maybe<a>)
   match tree
     Leaf -> (Node(Red, key, Leaf, Leaf), Nothing)
     Node(color, value, left, right) -> match cmp(key, value)
       Lt ->
-        val (l, prev) = left.insert-internal(key, cmp, replace)
+        val (l, prev) =
+          left.unsafe-decreasing.insert-internal(key, cmp, replace)
         (Node(color, value, l, right).balance, prev)
       Eq -> (
         Node(color, if replace then key else value, left, right),
         Just(value)
       )
       Gt ->
-        val (r, prev) = right.insert-internal(key, cmp, replace)
+        val (r, prev) =
+          right.unsafe-decreasing.insert-internal(key, cmp, replace)
         (Node(color, value, left, r).balance, prev)
 
 // Inserts an element into a red-black tree.
@@ -110,31 +107,29 @@ fun insert(
   cmp : (a, a) -> order,
   replace : bool
 ) : (rbtree<a>, maybe<a>)
-  val (t, prev) = unsafe-no-div(fn()
-    tree.insert-internal(key, cmp, replace)
-  )
+  val (t, prev) = tree.insert-internal(key, cmp, replace)
   (t.as-black, prev)
 
 // Unzips a red-black tree along the left spine.
 fun unzip-left(
   tree : rbtree<a>,
   zipper : list<(color, a, rbtree<a>)>
-) : div list<(color, a, rbtree<a>)>
+) : list<(color, a, rbtree<a>)>
   match tree
     Leaf -> zipper
     Node(color, value, left, right) -> (
-      left.unzip-left(Cons((color, value, right), zipper))
+      left.unsafe-decreasing.unzip-left(Cons((color, value, right), zipper))
     )
 
 // Unzips a red-black tree along the right spine.
 fun unzip-right(
   tree : rbtree<a>,
   zipper : list<(color, a, rbtree<a>)>
-) : div list<(color, a, rbtree<a>)>
+) : list<(color, a, rbtree<a>)>
   match tree
     Leaf -> zipper
     Node(color, value, left, right) -> (
-      right.unzip-right(Cons((color, value, left), zipper))
+      right.unsafe-decreasing.unzip-right(Cons((color, value, left), zipper))
     )
 
 // A site for joining two trees on a value.
@@ -160,7 +155,7 @@ fun find-join-site(
   left-tree : rbtree<a>,
   right-zipper : list<(color, a, rbtree<a>)>,
   right-tree : rbtree<a>
-) : div joinsite<a>
+) : joinsite<a>
   match (left-zipper, right-zipper)
     // Terminate at the end of either zipper.
     (_, Nil) -> Joinsite(Left(left-zipper), left-tree, right-tree)
@@ -171,12 +166,12 @@ fun find-join-site(
       find-join-site(
         left-zipper,
         left-tree,
-        right-zipper1,
+        right-zipper1.unsafe-decreasing,
         Node(Red, right-value, right-tree, right-rchild)
       )
     (Cons((Red, left-value, left-lchild), left-zipper1), _) ->
       find-join-site(
-        left-zipper1,
+        left-zipper1.unsafe-decreasing,
         Node(Red, left-value, left-lchild, left-tree),
         right-zipper,
         right-tree
@@ -188,9 +183,9 @@ fun find-join-site(
       Cons((Black, right-value, right-rchild), right-zipper1)
     ) ->
       find-join-site(
-        left-zipper1,
+        left-zipper1.unsafe-decreasing,
         Node(Red, left-value, left-lchild, left-tree),
-        right-zipper1,
+        right-zipper1.unsafe-decreasing,
         Node(Red, right-value, right-tree, right-rchild)
       )
 
@@ -214,7 +209,7 @@ fun zip-balance-right(
 
 // Joins two red-black trees on a given key. The input trees must be entirely
 // less than and greater than the key, respectively.
-fun join(left : rbtree<a>, key : a, right : rbtree<a>) : div rbtree<a>
+fun join(left : rbtree<a>, key : a, right : rbtree<a>) : rbtree<a>
   val Joinsite(zipper, left-part, right-part) = find-join-site(
     left.unzip-right(Nil),
     Leaf,
@@ -232,24 +227,27 @@ fun split(
   tree : rbtree<a>,
   key : a,
   cmp : (a, a) -> order
-) : div (rbtree<a>, maybe<a>, rbtree<a>)
+) : (rbtree<a>, maybe<a>, rbtree<a>)
   match tree
     Leaf -> (Leaf, Nothing, Leaf)
     Node(_, value, left, right) -> match cmp(key, value)
       Lt ->
-        val (left-left, m, left-right) = left.split(key, cmp)
+        val (left-left, m, left-right) =
+          left.unsafe-decreasing.split(key, cmp)
         (left-left, m, join(left-right, value, right))
       Eq -> (left, Just(value), right)
       Gt ->
-        val (right-left, m, right-right) = right.split(key, cmp)
+        val (right-left, m, right-right) =
+          right.unsafe-decreasing.split(key, cmp)
         (join(left, value, right-left), m, right-right)
 
-fun union-internal(
+// Returns the union of two red-black trees.
+fun union(
   left : rbtree<a>,
   right : rbtree<a>,
   cmp : (a, a) -> order,
   merge : (a, a) -> a
-) : div rbtree<a>
+) : rbtree<a>
   match right
     Leaf -> left
     Node(_, right-value, right-left, right-right) ->
@@ -259,26 +257,16 @@ fun union-internal(
         left-right
       ) = left.split(right-value, cmp)
       join(
-        union-internal(left-left, right-left, cmp, merge),
+        union(left-left, right-left.unsafe-decreasing, cmp, merge),
         maybe-left-value.map(fn(x) merge(x, right-value)).default(right-value),
-        union-internal(left-right, right-right, cmp, merge)
+        union(left-right, right-right.unsafe-decreasing, cmp, merge)
       )
-
-// Returns the union of two red-black trees.
-fun union(
-  lhs : rbtree<a>,
-  rhs : rbtree<a>,
-  cmp : (a, a) -> order,
-  merge : (a, a) -> a
-) : rbtree<a>
-  unsafe-no-div(fn() union-internal(lhs, rhs, cmp, merge))
-
-fun node-values-internal(tree : rbtree<a>) : div list<a>
-  match tree
-    Leaf -> []
-    Node(_, value, left, right) ->
-      left.node-values-internal ++ [value] ++ right.node-values-internal
 
 // Returns a list of the node values in a red-black tree.
 fun node-values(tree : rbtree<a>) : list<a>
-  unsafe-no-div(fn() tree.node-values-internal)
+  match tree
+    Leaf -> []
+    Node(_, value, left, right) ->
+      left.unsafe-decreasing.node-values ++
+      [value] ++
+      right.unsafe-decreasing.node-values
