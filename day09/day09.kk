@@ -17,6 +17,10 @@ val origin = Point(0, 0)
 fun compare(lhs : point, rhs : point) : order
   compare(lhs.x, rhs.x).or(compare(lhs.y, rhs.y))
 
+// Prints a point.
+fun show(p : point) : string
+  "(" ++ p.x.show ++ ", " ++ p.y.show ++ ")"
+
 // Returns whether two points are adjacent or touching via at most a single step
 // in each direction.
 fun are-adjacent(lhs : point, rhs : point) : bool
@@ -82,43 +86,47 @@ fun step-towards(tail : int, head : int) : int
 
 // Returns the tail position after the tail has moved to catch up with the head.
 fun chase(tail : point, head : point) : point
-  if are-adjacent(tail, head) then tail else Point(
+  if are-adjacent(head, tail) then tail else Point(
     tail.x.step-towards(head.x),
     tail.y.step-towards(head.y)
   )
 
 // The position of a rope at a given instant.
-struct rope
-  head : point
-  tail : point
+alias rope = list<point>
 
 // Applies a head step in the given direction to the rope, along with a tail
 // chase.
 fun apply(r : rope, dir : dir) : rope
-  val head = r.head.step(dir)
-  Rope(head, r.tail.chase(head))
+  match r
+    Nil -> Nil
+    Cons(head, ts) ->
+      ts.foldl-accumulate(head.step(dir), fn(h, t) chase(t, h))
 
 // Applies each head step to the rope, returning a list of all rope positions in
 // order.
 fun apply-all(r : rope, dirs : list<dir>) : list<rope>
-  Cons(r, dirs.foldl-accumulate(r, apply))
+  dirs.foldl-accumulate(r, apply)
 
 // Finds the number of distinct tail positions in a list.
-fun distinct-tail-positions(rs : list<rope>) : console int
+fun distinct-tail-positions(rs : list<rope>) : <abort,console> int
   // This loop is a bit slow, so print something to let the user know we're
   // still making progress.
   rs.enumerate.foldl(
     newset(compare : (point, point) -> order),
     fn(s, (i, r))
+      with ctx("Position " ++ i.show)
       if i % 100 == 0 then println("Examining position " ++ i.show)
-      s.insert(r.tail)
+      s.insert(r.last.expect("No tail on this rope"))
   ).size
 
 fun exmain(input : string)
   val moves = parse(input.slice, pinput).expect("Invalid input")
-  val ropes = Rope(origin, origin).apply-all(moves.dirs)
-  val pt1 = distinct-tail-positions(ropes)
+  val ropes1 = origin.replicate(2).apply-all(moves.dirs)
+  val ropes2 = origin.replicate(10).apply-all(moves.dirs)
+  val pt1 = distinct-tail-positions(ropes1)
+  val pt2 = distinct-tail-positions(ropes2)
   println(pt1)
+  println(pt2)
 
 fun main()
   run-main(exmain)
