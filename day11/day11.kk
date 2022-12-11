@@ -1,5 +1,6 @@
 import aok/list
 import aok/main
+import aok/math
 import aok/parse
 import aok/sort
 import std/text/parse
@@ -82,6 +83,10 @@ fun pinput() : <abort,exn,parse> (list<monkey>, list<list<int>>)
     (monkey, start)
   ).unzip
 
+// Determines a modulus to do computations in that won't affect the result.
+fun find-modulus(monkeys : list<monkey>) : int
+  monkeys.foldl(1, fn(mod, monkey) lcm(mod, monkey.test))
+
 // An effect for monkeys tossing items around.
 effect monkey-business
   // Pops all the items held by a monkey and returns them as a list.
@@ -108,35 +113,51 @@ fun monkey-business(
       )
   action()
 
-// Runs the actions of a single monkey. Returns the number of items the monkey
-// inspected.
-fun run-monkey(idx : int, monkey : monkey) : monkey-business int
+// Runs the actions of a single monkey using the given relief function. Returns
+// the number of items the monkey inspected.
+fun run-monkey(
+  idx : int,
+  monkey : monkey,
+  relief : int -> int
+) : monkey-business int
   pop-all(idx).map(fn(worry)
-    val new-worry = monkey.operation.eval(worry) / 3
+    val new-worry = relief(monkey.operation.eval(worry))
     if new-worry % monkey.test == 0
       then throw-item(monkey.if-true, new-worry)
       else throw-item(monkey.if-false, new-worry)
   ).length
 
-// Runs the actions of all monkeys for a given number of rounds, returning the
-// number of times each monkey inspected items.
+// Runs the actions of all monkeys for a given number of rounds using the given
+// relief funciton. Returns the number of times each monkey inspected items.
 fun run-monkeys-get-inspections(
   monkeys : list<monkey>,
+  relief : int -> int,
   start : list<list<int>>,
   time : int
 ) : <console,exn> list<int>
   with monkey-business(start)
   list(1, time).foldl(0.replicate(monkeys.length), fn(inspections, n)
     zip(inspections, monkeys.enumerate.map(fn((i, monkey))
-      run-monkey(i, monkey)
+      run-monkey(i, monkey, relief)
     )).map(fn((a, b)) a + b)
   )
 
 fun exmain(input : string)
   val (monkeys, start) = parse(input.slice, pinput).expect("Invalid input")
-  val inspections = run-monkeys-get-inspections(monkeys, start, 20)
-  val total-monkey-business = inspections.sort.reverse.take(2).foldl1((*))
-  println(total-monkey-business)
+  val modulus = monkeys.find-modulus
+
+  val inspections-pt1 =
+    run-monkeys-get-inspections(monkeys, fn(w) w / 3, start, 20)
+  val inspections-pt2 =
+    run-monkeys-get-inspections(monkeys, fn(w) w % modulus, start, 10000)
+
+  val total-monkey-business-pt1 =
+    inspections-pt1.sort.reverse.take(2).foldl1((*))
+  val total-monkey-business-pt2 =
+    inspections-pt2.sort.reverse.take(2).foldl1((*))
+
+  println(total-monkey-business-pt1)
+  println(total-monkey-business-pt2)
 
 fun main()
   run-main(exmain)
