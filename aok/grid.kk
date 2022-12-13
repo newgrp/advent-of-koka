@@ -6,8 +6,12 @@ pub struct loc
   row : int
   col : int
 
+// Equality for locations.
+pub fun (==)(lhs : loc, rhs : loc) : bool
+  compare(lhs, rhs) == Eq
+
 // Compares two locations lexicographically by row then column.
-fun compare(lhs : loc, rhs : loc) : order
+pub fun compare(lhs : loc, rhs : loc) : order
   compare(lhs.row, rhs.row).or(compare(lhs.col, rhs.col))
 
 // Prints a `loc`.

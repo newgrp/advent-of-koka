@@ -75,33 +75,56 @@ fun neighbors(elevs : grid<h, int>, loc : loc) : read<h> list<loc>
       )
 
 // Determines the shortest path between two cells via breadth-first search.
-fun bfs(elevs : grid<h, int>, start : loc, end : loc) : <abort,console,st<h>> maybe<int>
+fun bfs(
+  elevs : grid<h, int>,
+  start : loc,
+  pred : (loc, int) -> bool
+) : <abort,console,st<h>|e> maybe<int>
   unsafe-no-div {
     var dists := constant-grid(elevs.height, elevs.width, Nothing)
     var queue := [(start, 0)]
+    var res := Nothing
     while {
       match queue
         Nil -> False
         Cons((loc, n), queue') ->
           match dists.at(loc)
-            Nothing -> abort("Found " ++ loc.show ++ " in queue")
+            Nothing ->
+              abort("Found " ++ loc.show ++ " in queue")
+              True
             Just(Nothing) ->
               dists.at(loc) := Just(n)
               queue := queue' ++ elevs.neighbors(loc).map(
                 fn(loc') (loc', n + 1)
               )
+              val done = pred(
+                loc,
+                elevs.at(loc).expect("Invalid location: " ++ loc.show)
+              )
+              res := (if done then Just(n) else Nothing)
+              !done
             Just(Just(_)) ->
               queue := queue'
-          True
+              True
     } {}
-    dists.at(end).flatten
+    res
   }
 
 fun exmain(input : string)
   val cells = parse-input(input)
   val (elevs, start, end) = cells.extract-endpoints
-  val distance = bfs(elevs, start, end).expect("No path from start to end")
-  println(distance)
+  val distance1 = bfs(
+    elevs,
+    start,
+    fn(loc, _) loc == end
+  ).expect("No path from start to end")
+  val distance2 = bfs(
+    elevs.map(negate),
+    end,
+    fn(_, e) e.is-zero
+  ).expect("No path from start to end")
+  println(distance1)
+  println(distance2)
 
 fun main()
   run-main(exmain)
