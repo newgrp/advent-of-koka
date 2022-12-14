@@ -1,3 +1,10 @@
+// Returns the opposite order.
+pub fun (~)(o : order) : order
+  match o
+    Lt -> Gt
+    Eq -> Eq
+    Gt -> Lt
+
 // Chains two orders for lexicographical comparison.
 pub fun or(lhs : order, rhs : order) : order
   match lhs
