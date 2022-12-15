@@ -1,8 +1,10 @@
+import aok/binary-search
 import aok/fn
 import aok/order
 import aok/list
 import aok/main
 import aok/parse
+import aok/sort
 import aok/tuple
 import std/text/parse
 
@@ -26,6 +28,15 @@ fun compare-internal(lhs : packet, rhs : packet) : div order
 // Compares two packets.
 fun compare(lhs : packet, rhs : packet) : order
   unsafe-no-div { compare-internal(lhs, rhs) }
+
+fun show-internal(p : packet) : div string
+  match p
+    Int(n) -> n.show
+    List(xs) -> "[" ++ xs.map(show-internal).join(",") ++ "]"
+
+// Prints a packet.
+fun show(p : packet) : string
+  unsafe-no-div { p.show-internal }
 
 // A packet parser.
 fun ppacket(elem : parser<<console|e>,packet>) : parser<<console|e>,packet>
@@ -58,20 +69,32 @@ fun parse-packet(line : string) : <abort,console> packet
   parse(line.slice, parser).expect("Invalid packet")
 
 // Parses a sequence of pairs of packets.
-fun parse-input(input : string) : <abort,console> list<(packet, packet)>
+fun parse-input(input : string) : <abort,console> list<packet>
   input.lines.enumerate.filter-map(fn((i, line))
     with ctx("Line " ++ i.inc.show)
     if line.is-notempty
       then Just(parse-packet(line))
       else Nothing
-  ).chunk-pairs
+  )
 
 fun exmain(input : string)
-  val pairs = parse-input(input)
-  val pt1 = pairs.map-indexed(fn(i, (lhs, rhs))
+  val dividers = [
+    List([List([Int(2)])]),
+    List([List([Int(6)])])
+  ]
+
+  val packets = parse-input(input)
+  val sorted = (packets ++ dividers).sort-by(compare)
+  val pt1 = packets.chunk-pairs.map-indexed(fn(i, (lhs, rhs))
     if compare(lhs, rhs) == Lt then i + 1 else 0
   ).sum
+  val pt2 = dividers.map(fn(div)
+    sorted.binary-search-for(div, compare).expect-left(
+      "Divider not found"
+    ).fst + 1
+  ).foldl(1, (*))
   println(pt1)
+  println(pt2)
 
 fun main()
   run-main(exmain)

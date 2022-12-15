@@ -20,6 +20,18 @@ pub fun expect(m : maybe<a>, msg : string) : abort a
     Just(x) -> x
     Nothing -> abort(msg)
 
+// Extracts the left value from an `either` or aborts.
+pub fun expect-left(e : either<a, b>, msg : string) : abort a
+  match e
+    Left(a) -> a
+    Right(_) -> abort(msg)
+
+// Extracts the right value from an `either` or aborts.
+pub fun expect-right(e : either<a, b>, msg : string) : abort b
+  match e
+    Left(_) -> abort(msg)
+    Right(b) -> b
+
 // Extracts the value from a `parse-error` or aborts.
 pub fun expect(e : parse-error<a>, msg : string) : abort a
   with ctx(msg)
