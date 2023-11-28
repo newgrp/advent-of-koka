@@ -7,7 +7,7 @@ fun by-key(cmp : (k, k) -> order) : (((k, v), (k, v)) -> order)
   fn((a, _), (b, _)) cmp(a, b)
 
 // A map from keys of one type to values of another.
-pub type rbmap<k, v>
+pub value type rbmap<k, v>
   Map(
     tree : rbtree<(k, v)>,
     cmp : (k, k) -> order

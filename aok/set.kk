@@ -4,7 +4,7 @@ import std/num/int32
 import std/num/int64
 
 // A set of values of the same type.
-pub type rbset<a>
+pub value type rbset<a>
   Set(
     tree : rbtree<a>,
     cmp : (a, a) -> order
