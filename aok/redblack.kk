@@ -29,7 +29,7 @@ fun as-black(tree : rbtree<a>) : rbtree<a>
     Node(_, value, left, right) -> Node(Black, value, left, right)
 
 // A debug string showing the internal red-black tree structure.
-fun debug(tree : rbtree<a>, show : a -> string) : string
+pub fun debug(tree : rbtree<a>, show : a -> string) : string
   match tree
     Leaf -> "Leaf"
     Node(color, value, left, right) ->
@@ -41,14 +41,14 @@ fun debug(tree : rbtree<a>, show : a -> string) : string
       ].join(", ") ++ ")"
 
 // Returns the number of nodes in a red-black tree.
-fun size(tree : rbtree<a>) : int
+pub fun size(tree : rbtree<a>) : int
   match tree
     Leaf -> 0
     Node(_, _, left, right) ->
       1 + left.unsafe-decreasing.size + right.unsafe-decreasing.size
 
 // Searches a red-black tree for a node.
-fun find(tree : rbtree<a>, hint : a -> order) : maybe<a>
+pub fun find(tree : rbtree<a>, hint : a -> order) : maybe<a>
   match tree
     Leaf -> Nothing
     Node(_, value, left, right) -> match hint(value)
@@ -101,7 +101,7 @@ fun insert-internal(
         (Node(color, value, left, r).balance, prev)
 
 // Inserts an element into a red-black tree.
-fun insert(
+pub fun insert(
   tree : rbtree<a>,
   key : a,
   cmp : (a, a) -> order,
@@ -242,7 +242,7 @@ fun split(
         (join(left, value, right-left), m, right-right)
 
 // Returns the union of two red-black trees.
-fun union(
+pub fun union(
   left : rbtree<a>,
   right : rbtree<a>,
   cmp : (a, a) -> order,
@@ -263,7 +263,7 @@ fun union(
       )
 
 // Returns a list of the node values in a red-black tree.
-fun node-values(tree : rbtree<a>) : list<a>
+pub fun node-values(tree : rbtree<a>) : list<a>
   match tree
     Leaf -> []
     Node(_, value, left, right) ->
