@@ -1,0 +1,5 @@
+# Koka working directory.
+/.koka/
+
+# Advent of Code actual input files.
+**/input.txt
