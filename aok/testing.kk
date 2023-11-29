@@ -60,5 +60,5 @@ pub fun testmain(action : () -> <console,exn,testcase|e> a) : <console|e> int
       error(e.show)
       fail()
     action().ignore
-  if !ok then println("TESTS FAILED")
+  if ok then println("TESTS PASSED") else println("TESTS FAILED")
   ok.int

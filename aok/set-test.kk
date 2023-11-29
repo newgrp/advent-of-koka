@@ -99,6 +99,53 @@ fun test-random-inserts()
     expect-cannot-insert(s, n)
   )
 
+fun test-delete-removes-elements()
+  with subtest("delete removes elements")
+
+  val x = 0.int32
+  val y = 1.int32
+  val z = 2.int32
+
+  val s = newset-int32().insert(x).insert(y).insert(z)
+
+  val s1 = s.delete(x)
+  expect-not-contains(s1, x)
+  expect-contains(s1, y)
+
+  val s2 = s.delete(x).delete(z)
+  expect-not-contains(s1, x)
+  expect-contains(s1, y)
+  expect-not-contains(s1, z)
+
+fun test-delete-is-idempotent()
+  with subtest("delete is idempotent")
+
+  val x = 0.int32
+  val y = 1.int32
+  val z = 2.int32
+
+  val s = newset-int32().insert(x).insert(y).insert(z)
+
+  val s1 = s.delete(x)
+  val s2 = s1.delete(x)
+  expect-eq(s2, s1)
+
+fun test-try-delete-reports-absent-elements()
+  with subtest("delete is idempotent")
+
+  val x = 0.int32
+  val y = 1.int32
+  val z = 2.int32
+
+  val s = newset-int32().insert(x).insert(y).insert(z)
+
+  val (_, test1) = s.try-delete(x)
+  expect(test1.is-just)
+
+  val (s2, test2) = s.try-delete(4.int32)
+  expect(test2.is-none)
+  expect-eq(s2, s)
+
 fun test-union-contains-all-elements-once()
   with subtest("union contains all elements once")
 

@@ -13,7 +13,7 @@ fun op(color : color) : color
     Red -> Black
 
 // A red black tree.
-type rbtree<a>
+pub type rbtree<a>
   con Leaf
   con Node(
     color : color,
@@ -270,3 +270,158 @@ pub fun node-values(tree : rbtree<a>) : list<a>
       left.unsafe-decreasing.node-values ++
       [value] ++
       right.unsafe-decreasing.node-values
+
+// DEFINITION: A red-black tree T' is "substitution-safe" for another red-black
+// tree T if and only if T may be replaced with T' in any red-black tree U that
+// contains T as a subtree. In other words:
+//
+//   * T' has the same black height as T
+//   * T' may be red only if T is
+//
+// This definition also applies if T' is a double-black node.
+
+// A double-black node in a red-black tree.
+type double-black<a>
+  con BBLeaf
+  con BBNode(
+    value : a,
+    left : rbtree<a>,
+    right : rbtree<a>
+  )
+
+// Reduces a double-black node to a regular black node.
+fun as-black(tree : double-black<a>) : rbtree<a>
+  match tree
+    BBLeaf -> Leaf
+    BBNode(value, left, right) -> Node(Black, value, left, right)
+
+// Increases the "blackness" of the root node.
+fun blacker(tree : rbtree<a>) : either<rbtree<a>, double-black<a>>
+  match tree
+    Leaf -> Right(BBLeaf)
+    Node(Black, value, left, right) -> Right(BBNode(value, left, right))
+    Node(Red, value, left, right) -> Left(Node(Black, value, left, right))
+
+// `Node(color, a, left, right)` must be a valid red-black tree (with
+// double-black node).
+fun double-bubble(
+  color : color,
+  value : a,
+  left : double-black<a>,
+  right : rbtree<a>
+) : either<rbtree<a>, double-black<a>>
+  match right
+    // The function contract is violated, so we may return an invalid tree.
+    Leaf -> Left(Node(color, value, left.as-black, right))
+    Node(Black, y, Node(Red, x, a, b), c) ->
+      Left(Node(
+        color,
+        x,
+        Node(Black, value, left.as-black, a),
+        Node(Black, y, b, c)
+      ))
+    Node(Black, x, a, Node(Red, y, b, c)) ->
+      Left(Node(
+        color,
+        x,
+        Node(Black, value, left.as-black, a),
+        Node(Black, y, b, c)
+      ))
+    Node(Black, x, a, b) ->
+      Node(color, value, left.as-black, Node(Red, x, a, b)).blacker
+    // `color` must be `Black`.
+    Node(Red, x, a, b) ->
+      match double-bubble(Red, value, left, a).unsafe-decreasing
+        Left(tree) -> Left(Node(Black, x, tree, b))
+        Right(double-tree) ->
+          double-bubble(Black, x, double-tree, b).unsafe-decreasing
+
+// `Node(color, a, left, right)` must be a valid red-black tree (with
+// double-black node).
+fun double-bubble(
+  color : color,
+  value : a,
+  left : rbtree<a>,
+  right : double-black<a>
+) : either<rbtree<a>, double-black<a>>
+  match left
+    // The function contract is violated, so we may return an invalid tree.
+    Leaf -> Left(Node(color, value, left, right.as-black))
+    Node(Black, y, Node(Red, x, a, b), c) ->
+      Left(Node(
+        color,
+        y,
+        Node(Black, x, a, b),
+        Node(Black, value, c, right.as-black)
+      ))
+    Node(Black, x, a, Node(Red, y, b, c)) ->
+      Left(Node(
+        color,
+        y,
+        Node(Black, x, a, b),
+        Node(Black, value, c, right.as-black)
+      ))
+    Node(Black, x, a, b) ->
+      Node(color, value, Node(Red, x, a, b), right.as-black).blacker
+    // `color` must be `Black`.
+    Node(Red, x, a, b) ->
+      match double-bubble(Red, value, b, right).unsafe-decreasing
+        Left(tree) -> Left(Node(Black, x, a, tree))
+        Right(double-tree) ->
+          double-bubble(Black, x, a, double-tree).unsafe-decreasing
+
+// Deletes the least (i.e., left-most) element of the tree.
+//
+// The returned tree is substitution-safe for `tree`.
+fun delete-least(
+  tree : rbtree<a>
+) : maybe<(either<rbtree<a>, double-black<a>>, a)>
+  match tree
+    Leaf -> Nothing
+    Node(color, value, left, right) -> match left.delete-least
+      // `left` must be a leaf.
+      Nothing -> match color
+        Black -> Just((right.blacker, value))
+        Red -> Just((Left(right), value))
+      Just((Left(left-new), a)) ->
+        Just((Left(Node(color, value, left-new, right)), a))
+      Just((Right(left-double), a)) ->
+        Just((double-bubble(color, value, left-double, right), a))
+
+// Deletes a node from the given tree.
+//
+// The returned tree is substitution-safe for `tree`.
+fun delete-internal(
+  tree : rbtree<a>,
+  hint : a -> order
+) : (either<rbtree<a>, double-black<a>>, maybe<a>)
+  match tree
+    Leaf -> (Left(Leaf), Nothing)
+    Node(color, value, left, right) -> match hint(value)
+      Lt ->
+        val (l, elem) = left.delete-internal(hint)
+        match l
+          Left(l) -> (Left(Node(color, value, l, right)), elem)
+          Right(l) -> (double-bubble(color, value, l, right), elem)
+      Eq -> match right.delete-least
+        Just((Left(r), least)) -> (Left(Node(color, least, left, r)), Just(value))
+        Just((Right(r), least)) -> (double-bubble(color, least, left, r), Just(value))
+        // `right` is a leaf, so `left` must be either a leaf or a red singleton.
+        Nothing -> match color
+          Black -> (left.blacker, Just(value))
+          // `left` must be a leaf.
+          Red -> (Left(Leaf), Just(value))
+      Gt ->
+        val (r, elem) = right.delete-internal(hint)
+        match r
+          Left(r) -> (Left(Node(color, value, left, r)), elem)
+          Right(r) -> (double-bubble(color, value, left, r), elem)
+
+// Deletes an element from a red-black tree.
+pub fun delete(
+  tree : rbtree<a>,
+  hint : a -> order
+) : (rbtree<a>, maybe<a>)
+  match tree.delete-internal(hint)
+    (Left(new-tree), elem) -> (new-tree, elem)
+    (Right(double-tree), elem) -> (double-tree.as-black, elem)

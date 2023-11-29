@@ -79,6 +79,19 @@ pub fun try-insert(set : rbset<a>, key : a) : (rbset<a>, bool)
       val (t, prev) = tree.insert(key, cmp, False)
       (Set(t, cmp), prev.is-nothing)
 
+// Deletes an element from a set, if it exists.
+pub fun delete(set : rbset<a>, key : a) : rbset<a>
+  set.try-delete(key).fst
+
+// Deletes an element from a set.
+//
+// Returns the deleted element, if it was found.
+pub fun try-delete(set : rbset<a>, key : a) : (rbset<a>, maybe<a>)
+  match set
+    Set(tree, cmp) ->
+      val (t, elem) = tree.delete(fn(v) cmp(key, v))
+      (Set(t, cmp), elem)
+
 // Takes the union of two sets. Uses the comparator from the left set.
 pub fun (||)(lhs : rbset<a>, rhs : rbset<a>) : rbset<a>
   match (lhs, rhs)
