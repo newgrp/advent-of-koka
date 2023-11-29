@@ -38,6 +38,31 @@ pub fun newmap-int64() : rbmap<int64, v>
 pub fun newmap-string() : rbmap<string, v>
   newmap(compare : (string, string) -> order)
 
+// Constructs a map from a list of pairs.
+//
+// If multiple pairs contain the same key, the first value for that key is used
+// in the map.
+pub fun rbmap(prs : list<(k, v)>, cmp : (k, k) -> order) : rbmap<k, v>
+  Map(prs.rbtree(cmp.by-key), cmp)
+
+pub fun rbmap(prs : list<(char, v)>) : rbmap<char, v>
+  prs.rbmap(compare : (char, char) -> order)
+
+pub fun rbmap(prs : list<(float64, v)>) : rbmap<float64, v>
+  prs.rbmap(compare : (float64, float64) -> order)
+
+pub fun rbmap(prs : list<(int, v)>) : rbmap<int, v>
+  prs.rbmap(compare : (int, int) -> order)
+
+pub fun rbmap(prs : list<(int32, v)>) : rbmap<int32, v>
+  prs.rbmap(compare : (int32, int32) -> order)
+
+pub fun rbmap(prs : list<(int64, v)>) : rbmap<int64, v>
+  prs.rbmap(compare : (int64, int64) -> order)
+
+pub fun rbmap(prs : list<(string, v)>) : rbmap<string, v>
+  prs.rbmap(compare : (string, string) -> order)
+
 // A debug string showing the internals of a map.
 pub fun debug(
   m : rbmap<k, v>,

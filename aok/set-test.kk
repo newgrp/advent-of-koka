@@ -50,6 +50,26 @@ fun test-newset-is-empty()
   val x = 0.int32
   expect-not-contains(newset-int32(), x)
 
+fun test-rbset-from-list()
+  with subtest("construction from list works")
+
+  val x = 0.int32
+  val y = 1.int32
+  val z = 2.int32
+
+  val s = [x, y, z].rbset
+  expect-contains(s, x)
+  expect-contains(s, y)
+  expect-contains(s, z)
+
+fun test-rbset-from-list-random()
+  with subtest("construction from random list works")
+
+  val xs = random-list-shorter-than(20)
+  val s = xs.rbset
+  expect-size(s, xs.length)
+  xs.foreach(fn(n) expect-contains(s, n))
+
 fun test-insert-adds-elements()
   with subtest("insert adds elements")
 

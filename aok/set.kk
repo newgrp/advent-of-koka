@@ -32,6 +32,28 @@ pub fun newset-int64() : rbset<int64>
 pub fun newset-string() : rbset<string>
   newset(compare : (string, string) -> order)
 
+// Constructs a set from a list.
+pub fun rbset(xs : list<a>, cmp : (a, a) -> order) : rbset<a>
+  Set(xs.rbtree(cmp), cmp)
+
+pub fun rbset(xs : list<char>) : rbset<char>
+  xs.rbset(compare : (char, char) -> order)
+
+pub fun rbset(xs : list<float64>) : rbset<float64>
+  xs.rbset(compare : (float64, float64) -> order)
+
+pub fun rbset(xs : list<int>) : rbset<int>
+  xs.rbset(compare : (int, int) -> order)
+
+pub fun rbset(xs : list<int32>) : rbset<int32>
+  xs.rbset(compare : (int32, int32) -> order)
+
+pub fun rbset(xs : list<int64>) : rbset<int64>
+  xs.rbset(compare : (int64, int64) -> order)
+
+pub fun rbset(xs : list<string>) : rbset<string>
+  xs.rbset(compare : (string, string) -> order)
+
 // A debug string showing the internals of a set.
 pub fun debug(set : rbset<a>, show : a -> string) : string
   match set
