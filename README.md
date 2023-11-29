@@ -6,3 +6,7 @@ I do not claim that any of these are the most efficient solutions. I'm making an
 ## Update
 
 I've made the foolish mistake of having a life during the holidays, and I'm no longer able to dedicate enough time to solve these as they come out. I may sporadically solve a problem or two, but I make no commitments.
+
+## Update 2
+
+I've decided to finish up some library work and attempt this again for 2023. However, unlike in 2022, I will make no attempt to keep up with the release of new problems. Instead, I'm only going to solve problems when and while I'm enjoying it.
