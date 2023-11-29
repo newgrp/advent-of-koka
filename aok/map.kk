@@ -6,6 +6,9 @@ import std/num/int64
 fun by-key(cmp : (k, k) -> order) : (((k, v), (k, v)) -> order)
   fn((a, _), (b, _)) cmp(a, b)
 
+fun hint(cmp : (k, k) -> order, key : k) : ((k, v) -> order)
+  fn((k, _)) cmp(key, k)
+
 // A map from keys of one type to values of another.
 pub value type rbmap<k, v>
   Map(
@@ -71,7 +74,7 @@ pub fun contains-key(m : rbmap<k, v>, key : k) : bool
 // Gets the value associated with a key.
 pub fun at(m : rbmap<k, v>, key : k) : maybe<v>
   match m
-    Map(tree, cmp) -> tree.find(fn((k, _)) cmp(key, k)).map(snd)
+    Map(tree, cmp) -> tree.find(cmp.hint(key)).map(snd)
 
 // Inserts a key-value pair into a map, if the key doesn't already exist.
 pub fun insert-or-keep(m : rbmap<k, v>, key : k, value : v) : rbmap<k, v>
@@ -113,6 +116,18 @@ pub fun try-insert-or-replace(
   value : v
 ) : (rbmap<k, v>, maybe<v>)
   m.try-insert-internal(key, value, True)
+
+pub fn delete(m : rbmap<k, v>, key : k) : rbmap<k, v>
+  m.try-delete(key).fst
+
+// Deletes a key from a map.
+//
+// Returns the value if the key existed in the map.
+pub fun try-delete(m : rbmap<k, v>, key : k) : (rbmap<k, v>, maybe<v>)
+  match m
+    Map(tree, cmp) ->
+      val (t, elem) = tree.delete(cmp.hint(key))
+      (Map(t, cmp), elem.map(snd))
 
 // Merges two maps. Merges common values using the given function.
 //
