@@ -24,7 +24,7 @@ pub type rbtree<a>
     right : rbtree<a>
   )
 
-fun rbtree-internal(xs : list<a>, k : int) : div rbtree<a>
+fun rbtree-internal(xs : list<a>, k : int) : rbtree<a>
   val half = xs.length / 2
   val (ls, rst) = xs.split(half)
   match rst
@@ -34,14 +34,14 @@ fun rbtree-internal(xs : list<a>, k : int) : div rbtree<a>
       Node(
         color,
         value,
-        ls.rbtree-internal(k / 2),
-        rs.rbtree-internal(k / 2)
+        ls.unsafe-decreasing.rbtree-internal(k / 2),
+        rs.unsafe-decreasing.rbtree-internal(k / 2)
       )
 
 // Constructs a red-black tree from a list.
 fun rbtree(xs : list<a>, cmp : (a, a) -> order) : rbtree<a>
   val sorted = xs.sort-unique-by(cmp)
-  unsafe-no-div { sorted.rbtree-internal((sorted.length + 1) / 2) }
+  sorted.rbtree-internal((sorted.length + 1) / 2)
 
 // Changes the tree to a black node if it is not a leaf.
 fun as-black(tree : rbtree<a>) : rbtree<a>
