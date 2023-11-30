@@ -6,7 +6,7 @@ import std/num/int64
 fun by-key(cmp : (k, k) -> order) : (((k, v), (k, v)) -> order)
   fn((a, _), (b, _)) cmp(a, b)
 
-fun hint(cmp : (k, k) -> order, key : k) : ((k, v) -> order)
+fun hint(cmp : (k, k) -> order, key : k) : (((k, v)) -> order)
   fn((k, _)) cmp(key, k)
 
 // A map from keys of one type to values of another.
@@ -142,7 +142,8 @@ pub fun try-insert-or-replace(
 ) : (rbmap<k, v>, maybe<v>)
   m.try-insert-internal(key, value, True)
 
-pub fn delete(m : rbmap<k, v>, key : k) : rbmap<k, v>
+// Deletes a key from a map, if it exists.
+pub fun delete(m : rbmap<k, v>, key : k) : rbmap<k, v>
   m.try-delete(key).fst
 
 // Deletes a key from a map.
